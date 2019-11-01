@@ -57,7 +57,14 @@ class Tree:
         self.column_list.append(column_obj)
         self.total_number_of_column += 1
         
-    
+    def GetFirstCol(self, type_of_col):
+        for i in self.column_list:
+            if (i.GetTypeOfColumn() == type_of_col):
+                return i
+            elif (i.GetTypeOfColumn() == type_of_col):
+                return i
+        return "null_obj"
+            
     def ComputeEntropy(self):
         #print(Tree.ComputeEntropy.__name__, self.output_column_num)
 
@@ -124,17 +131,20 @@ class Tree:
         else:
             return "false"
     
+
+        
     def PrintLeafProbability(self):
-        print(Tree.GetColumn.__name__)
         in_valid, in_col = self.GetFirstInputColumnIndex()
         out_valid, out_col = self.GetFirstOutColumnIndex()
 
         out_col_obj = self.column_list[out_col]
         in_col_obj = self.column_list[in_col]
         u_count = out_col_obj.GetNumUniqueValueCount()
+        print(Tree.PrintLeafProbability.__name__, "u_count: ", u_count)
+
         if (u_count == 1):
             u_value = out_col_obj.GetUniqueData(0)
-            print(" ", in_col_obj.GetName(), "[",u_value, "] Probability = ", 1)
+            print(" ", in_col_obj.GetName(), "[", out_col_obj.GetName(), "= ", u_value, "] Probability = ", 1)
         else:
             #print("... u_count", u_count)
             #out_col_obj.Debug()
@@ -143,66 +153,128 @@ class Tree:
                 index_values = out_col_obj.GetIndexValues(u_value)
                 p,values = in_col_obj.GetSparseProbability(index_values)
                 for j in np.arange(len(values)):
-                    print(" ", in_col_obj.GetName(), "[",values[j], "] Probability = ", p[j])
+                    print(" ", in_col_obj.GetName(), "[",u_value, "] Probability = ", p[j])
         return
 
+    def GetOutputColumnEntropy(self):
+        output_column = self.column_list[self.output_column_num]
+        #print("GetOutputColumnEntropy: ",output_column.GetColumnEntropy(), " ", output_column.GetColumnData())
+        return output_column.GetColumnEntropy()
+    
+    def GetOutputColumnAnswer(self):
+        output_column = self.column_list[self.output_column_num]
+        out =  output_column.GetUserQuestion(0)
+        return out
 
-    
-def GetSubTree(depth, original_tree, remove_column_index, decision_value):
-    #print("GetSubTree: remove_column_index: ", remove_column_index, "Decision: ", decision_value," depth:", depth)
-    t = Tree(depth)
-    column_obj = original_tree.GetColumn(remove_column_index)
-    index_values = column_obj.GetIndexValues(decision_value)
-    for i in np.arange(original_tree.GetTotalColumn()):
-        if (i != remove_column_index):
-            valid_column = original_tree.GetColumn(i)
-            coltype, name, attr1, attr2, ncolumn = valid_column.GetPrunedColumn(index_values)
-            #print("GetSubTree: remove_column_index: ", remove_column_index, "remove_name: ", column_obj.GetName(),
-            #          "Decision: ", decision_value,
-            #          " depth:", depth, " ncolumn: ", name , " values: ", ncolumn )
 
-            c1 = ClassColumn(coltype, name, attr1, attr1, ncolumn)
-            t.AddColumn(c1)
-    
-    #print("GetSubTree:...Total columns in new tree:", t.GetTotalNumInputColumn())
-    
-    if (t.GetTotalNumInputColumn() <= 1):
-        return t, "leaf"
-    return t, "mid-node"
 
 def PrintLevel(level):
     for i in np.arange(level):
-        print(".", end = " ")         
+        print(".", end = " ")   
         
-def PreOrderTraversal(t, valid_flag, depth):
-    #print("PreOrderTraversal: valid_flag: ", valid_flag, "depth:", depth)
+            
+def GetSubTree(depth, original_tree, remove_column_index, decision_value, query):
+    #print("GetSubTree: remove_column_index: ", remove_column_index, "Decision: ", decision_value," depth:", depth)
+    #print("GetSubTree:\n")
+    t = Tree(depth)
+    column_obj = original_tree.GetColumn(remove_column_index)
+    index_values = column_obj.GetIndexValues(decision_value)
+    #print("GetSubtree: Removing column: ", column_obj.GetName())
+    for i in np.arange(original_tree.GetTotalColumn()):
+        if (i != remove_column_index):
+            valid_column = original_tree.GetColumn(i)
+            coltype, name, attr1, attr2, ncolumn = valid_column.GetFilterColumn(index_values)
+
+            c1 = ClassColumn(coltype, name, attr1, attr1, ncolumn)
+            #print("GetSubTree: ", name, " .. ", ncolumn)
+
+            t.AddColumn(c1)
+    
+    e = t.GetOutputColumnEntropy()
+    #print("GetSubtree: Got Entropy: ", e)
+    #print("GetSubTree:...Total columns in new tree:", t.GetTotalNumInputColumn())
+    
+    # Entropy of 0 is leaf
+    if (e == 0):
+        question = "Depth: "  +  str(depth) +  column_obj.GetUserQuestion(0) + t.GetOutputColumnAnswer()
+        PrintLevel(depth)
+        print(question)
+        return t, "leaf", e, question
+    
+    # Only one column left- just print probabiilty
+    if (t.GetTotalNumInputColumn() <= 1):
+        input_column =  t.GetFirstCol("input")
+        output_column = t.GetFirstCol("output")
+
+        in_p,in_unique_val = input_column.GetProbability()
+        question = ""
+        #print("..vyas", in_unique_val)
+        for i in np.arange(len(in_unique_val)):
+            in_attr_value = in_unique_val[i]
+            #print(in_attr_value)
+            index_values = input_column.GetIndexValues(in_attr_value)
+            #print(index_values)
+            coltype, name, attr1, attr2, ncolumn = output_column.GetFilterColumn(index_values)
+            nc = ClassColumn(coltype, name, attr1, attr2, ncolumn)
+            nc_p, nc_unique_val = nc.GetProbability()
+            
+            for j in np.arange(len(nc_p)):
+                question = "Depth: " + str(depth) +  input_column.GetUserQuestion(i) + nc.GetUserQuestion(j) + " with P = " + str(nc_p[j])
+                PrintLevel(depth)
+                print(question, "\n")                
+                #print("GetSubTree:....", input_column.GetUserQuestions(), i, j, input_column.GetUserQuestion(i) )
+        return t, "leaf" , e, question
+    
+    #print("GetSubTree: midnode")
+    PrintLevel(depth)
+    question = "Depth: "  +  str(depth) + query
+    print(question)
+    return t, "mid-node", e, " "
+      
+
+traversal_count = 0        
+def PreOrderTraversal(t, valid_flag, depth, query):
+    #print("PreOrderTraversal: ..depth..", depth)
+    global traversal_count
+    traversal_count +=1
+    if (traversal_count == 100):
+        return
 
     #t.Print()
     t.ComputeEntropy()
-    PrintLevel(depth)
+    #PrintLevel(depth)
 
     if (valid_flag == "valid"):
         col_num = t.GetMinEntropyNode()
         column_obj = t.GetColumn(col_num)
 
         unique_decision_count = column_obj.GetNumUniqueValueCount()
-        
+        #print("PreOrderTraversal: unique_decision_count on ", unique_decision_count)
+
         for i in np.arange(unique_decision_count):
             filter_data = column_obj.GetUniqueData(i)
-            new_tree, tree_type = GetSubTree(depth+1, t, col_num, filter_data)
-            if (tree_type == "mid-node"):
-                print(column_obj.GetUserQuestion(i))
-                PreOrderTraversal(new_tree, "valid", depth+1)
-            else:
-                print("..leaf..")
-                new_tree.PrintLeafProbability()       
+            str_var = " Is1 " + column_obj.GetName() + " " + filter_data +  " ? "
 
+            new_tree, tree_type, e, q = GetSubTree(depth+1, t, col_num, filter_data, str_var)
+            if (tree_type == "mid-node"):
+                #print("PreOrderTraversal: Filtering on i: ", i, "f : ",filter_data)
+                #PrintLevel(depth)
+                q = query + str_var
+                PreOrderTraversal(new_tree, "valid", depth+1, q)
+            else:
+                #print(q)
+                #str_var = " Is " + column_obj.GetName() + " " + filter_data +  " ? "
+                #print(str_var , end " ")
+
+                continue
+    return            
+            
 def Test():
-    i1= [ "rainy", "rainy", "overcast", "sunny", "sunny", "sunny", "overcast", "rainy", "rainy", "sunny", "rainy", "overcast", "overcast", "sunny"]
-    i2 = ["hot", "hot", "hot", "mild", "cool", "cool", "cool", "mild", "cool", "mild", "mild", "mild", "hot","mild"]
-    i3 = ["high", "high", "high", "high", "normal", "normal", "normal", "high","normal", "normal", "normal", "high", "normal", "high" ]
-    i4 = ["false", "true", "false", "false", "false", "true", "true", "false", "false", "false", "true", "true","false", "true" ]
-    o1 = ["no", "no", "yes", "yes", "yes", "no", "yes", "no", "yes", "yes", "yes", "yes", "yes", "no"]
+    i1= [ "rainy", "rainy", "overcast", "sunny", "sunny", "sunny", "overcast", "rainy", "rainy", "sunny", "rainy", "overcast", "overcast", "sunny", "rainy"]
+    i2 = ["hot", "hot", "hot", "mild", "cool", "cool", "cool", "mild", "cool", "mild", "mild", "mild", "hot","mild",  "hot" ]
+    i3 = ["high", "high", "high", "high", "normal", "normal", "normal", "high","normal", "normal", "normal", "high", "normal", "high", "high", ]
+    i4 = ["false", "true", "false", "false", "false", "true", "true", "false", "false", "false", "true", "true","false", "true", "true" ]
+    o1 = ["no", "no", "yes", "yes", "yes", "no", "yes", "no", "yes", "yes", "yes", "yes", "yes", "no", "yes"]
     #print(len(i1), len(i2), len(i3), len(i4), len(o1))
     c1 = ClassColumn("input", "Weather" , "rainy", "sunny", i1)
     c2 = ClassColumn("input", "Temperature" , "rainy", "sunny", i2)
@@ -220,7 +292,7 @@ def Test():
     
     t.AddColumn(co)
     t.ComputeEntropy()
-    PreOrderTraversal(t,"valid", 0)
+    PreOrderTraversal(t,"valid", 0,"")
 
     return
 

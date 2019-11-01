@@ -34,20 +34,25 @@ class ClassColumn:
         self.questions= []
         for i in self.unique_values:
             if (self.type_of_column == "input"):
-                str_var = " Is " + i +  " ? "
+                str_var = " Is " + self.name + " " + i +  " ? "
             else: #output
-                str_var = " == " + i
+                str_var = self.name + " = " + i
             self.questions.append( str_var )
             
 
     def GetUserQuestion(self, index):
         return self.questions[index]
     
+    def GetUserQuestions(self):
+        return self.questions
+    
+    
     def Debug(self):
         print("Name: ", self.name)
         print("unique_values: ", self.unique_values)
         print("unique_indices: ", self.unique_indices)
         print("unique_counts: ", self.unique_counts)
+        print("Entropy: ", self.entropy)
         
     def PrintProbability(self):
         for i in np.range(len(self.unique_values)):
@@ -59,7 +64,9 @@ class ClassColumn:
     # if unique_index = 0, returns first unique value
     #....
     def GetUniqueData(self, index):
-        return self.data[self.unique_indices[index]]
+        idx = self.unique_indices[index]
+        #print("....", idx, self.data[0][0])
+        return self.data[idx]
     
     def GetIndexValues(self, value):
         #print("..", value, "... " , self.data)
@@ -74,7 +81,10 @@ class ClassColumn:
     
     def GetFilterColumn(self, index_values):
         d=np.array(self.data)
-        return self.type_of_column, self.name, self.attribute_value1, self.attribute_value2, d[index_values]
+        f = d[index_values] 
+        l = f.shape[0]
+        fnew = f.reshape(1,l)[0]
+        return self.type_of_column, self.name, self.attribute_value1, self.attribute_value2, fnew
     
     def GetTypeOfColumn(self):
         return self.type_of_column
@@ -103,7 +113,7 @@ class ClassColumn:
     
     def GetColumnEntropy(self):
         return self.entropy
-
+ 
 # Takes 2 column and calculates Entropy
 def Entropy(input_column, result_column):
    
@@ -143,6 +153,8 @@ def Test():
     print(c1.GetUserQuestion(1))
     print(co.GetUserQuestion(1))
 
+    r = c1.GetIndexValues("rainy")
+    print(r)
     return
 
 if __name__ == "__main__":

@@ -59,7 +59,7 @@ def ImportData(file_name):
     
 def Dtree(t):
     print(__name__)
-    PreOrderTraversal(t,"valid", 0)
+    PreOrderTraversal(t,"valid", 0,"")
           
         
 def main():
