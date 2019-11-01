@@ -18,7 +18,7 @@ class Tree:
         self.is_get_next_valid = "false" #invalid
         
     def GetFirstInputColumnIndex(self):
-        if (self.GetTotalNumInputColumn >= 1):
+        if (self.GetTotalNumInputColumn() >= 1):
             for i in np.arange(self.total_number_of_column):
                 column_obj = self.column_list[i]
                 if (column_obj.GetTypeOfColumn() == "input"):
@@ -26,9 +26,10 @@ class Tree:
         return "invalid", 0
     
     def GetFirstOutColumnIndex(self):
-        if (self.GetTotalNumInputColumn >= 1):
+        if (self.GetTotalNumInputColumn() >= 1):
             for i in np.arange(self.total_number_of_column):
                 column_obj = self.column_list[i]
+                print("GetFirstOutColumnIndex: index: ", i, " type: ",column_obj.GetTypeOfColumn() )
                 if (column_obj.GetTypeOfColumn() == "output"):
                     return "valid", i
         return "invalid", 0
@@ -50,13 +51,14 @@ class Tree:
                 print("Error - More than 1 output column - Unhandled]\n")
                 exit(0)
             self.output_column_num = self.total_number_of_column
+            self.output_column_present = "true"
             
         self.column_list.append(column_obj)
         self.total_number_of_column += 1
         
     
     def ComputeColumnEntropy(self, column_num):
-        print(Tree.ComputeColumnEntropy.__name__, " column_num: ", column_num)
+        #print(Tree.ComputeColumnEntropy.__name__, " column_num: ", column_num)
 
         output_obj = self.column_list[self.output_column_num]
         output_data = output_obj.GetColumnData()
@@ -103,14 +105,14 @@ class Tree:
             if (node_type != "invalid"):
                 column_entropy.append([i, self.GetEntropy(i)])
         column_entropy = np.array(column_entropy)
-        print(column_entropy)
+        #print(column_entropy)
         self.elist = column_entropy[:,1]
         self.sorted_entropy_index = np.argsort(self.elist)
-        print(self.elist)
-        print(self.sorted_entropy_index)
+        #print(self.elist)
+        #print(self.sorted_entropy_index)
     
     def GetMinEntropyNode(self):
-        print(Tree.GetMinEntropyNode.__name__)
+        print(Tree.GetMinEntropyNode.__name__, self.sorted_entropy_index)
         return self.sorted_entropy_index[0]
 
     def GetNextRootNode(self):
@@ -127,7 +129,10 @@ class Tree:
             return "", "invalid"
     
     def GetColumn(self, index):
-        self.column_list[index]
+        #print(Tree.GetColumn.__name__, "col name: ", index)
+        #print(Tree.GetColumn.__name__, self.column_list[index].GetName())
+        #self.Print()
+        return self.column_list[index]
         
     def GetTotalNumInputColumn(self):
         count = 0
@@ -156,8 +161,9 @@ class Tree:
             return "false"
     
     def PrintLeafProbability(self):
-        in_col = self.GetFirstInputColumnIndex()
-        out_col = self.GetFirstOutColumnIndex()
+        in_valid, in_col = self.GetFirstInputColumnIndex()
+        out_valid, out_col = self.GetFirstOutColumnIndex()
+
         out_col_obj = self.column_list[out_col]
         in_col_obj = self.column_list[in_col]
         u_count = out_col_obj.GetNumUniqueValueCount()
@@ -176,17 +182,20 @@ class Tree:
 
     
 def GetSubTree(depth, original_tree, remove_column_index, decision_value):
+    print("GetSubTree: remove_column_index: ", remove_column_index, "Decision: ", decision_value," depth:", depth)
     t = Tree(depth)
     column_obj = original_tree.GetColumn(remove_column_index)
     index_values = column_obj.GetIndexValues(decision_value)
     for i in np.arange(original_tree.GetTotalColumn()):
         if (i != remove_column_index):
-            valid_column = t.GetColumn(i)
+            valid_column = original_tree.GetColumn(i)
             coltype, name, attr1, attr2, ncolumn = valid_column.GetPrunedColumn(index_values)
             c1 = ClassColumn(coltype, name, attr1, attr1, ncolumn)
             t.AddColumn(c1)
     
-    if (t.GetTotalNumInputColumn <= 1):
+    print("GetSubTree:...Total columns in new tree:", t.GetTotalNumInputColumn())
+    
+    if (t.GetTotalNumInputColumn() <= 1):
         return t, "leaf"
     return t, "mid-node"
     
@@ -195,17 +204,25 @@ def PreOrderTraversal(t, valid_flag, depth):
 
     t.Print()
     t.ComputeEntropy()
-    
+    t.Print()
+    print("1.................")
+
     if (valid_flag == "valid"):
         col_num = t.GetMinEntropyNode()
+        print("PreOrderTraversal: Minimum Entropy node colum: ", col_num)
         column_obj = t.GetColumn(col_num)
-        print("...", column_obj.GetName())
+        print("PreOrderTraversal: Minimum Entropy node colum: ", column_obj.GetName())
+        print("2.................")
+
         unique_decision_count = column_obj.GetNumUniqueValueCount()
         
         for i in np.arange(unique_decision_count):
             filter_data = column_obj.GetUniqueData(i)
             new_tree, tree_type = GetSubTree(depth+1, t, col_num, filter_data)
-            if (tree_type != "mid-node"):
+            if (tree_type == "mid-node"):
+                print("3.................")
                 PreOrderTraversal(new_tree, "valid", depth+1)
             else:
-                t.PrintLeafProbability()       
+                print("4.................")
+                
+                new_tree.PrintLeafProbability()       
