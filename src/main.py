@@ -37,7 +37,7 @@ def ImportData(file_name):
     c1 = ClassColumn("input", "Temperature", "less_than_38", "greater_than_38", ndata[:,0])
     c2 = ClassColumn("input", "Nausea", "yes", "no", ndata[:,1])
     c3 = ClassColumn("input", "Lumbar", "yes", "no", ndata[:,2])
-    c4 = ClassColumn("input", "Urine pushing", "yes", "no", ndata[:,3])
+    c4 = ClassColumn("input", "Urine pain", "yes", "no", ndata[:,3])
     c5 = ClassColumn("input", "Micturition", "yes", "no", ndata[:,4])
     c6 = ClassColumn("input", "Burning", "yes", "no", ndata[:,5])
     c7 = ClassColumn("output", "Decision: Inflamation", "yes", "no", ndata[:,6])
