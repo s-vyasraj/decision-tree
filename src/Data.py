@@ -10,6 +10,8 @@ Y = hypothesis(X)
 
 
 import numpy as np
+import matplotlib.pyplot as plt
+
 
 class ClassColumn:
     #type_of_column = input output
@@ -114,6 +116,11 @@ class ClassColumn:
     def GetColumnEntropy(self):
         return self.entropy
  
+    def PiePlot(self):
+        self.unique_values, self.unique_counts
+        plt.pie(self.unique_counts, labels=self.unique_values, autopct='%1.1f%%', shadow=True, startangle=140)
+        plt.show()
+        
 # Takes 2 column and calculates Entropy
 def Entropy(input_column, result_column):
    
@@ -155,8 +162,8 @@ def Test():
 
     r = c1.GetIndexValues("rainy")
     print(r)
-    return
-
+    c1.PiePlot()
+    
 if __name__ == "__main__":
     # execute only if run as a script
     Test()

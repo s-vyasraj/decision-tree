@@ -293,7 +293,7 @@ def Test():
     t.AddColumn(co)
     t.ComputeEntropy()
     PreOrderTraversal(t,"valid", 0,"")
-
+    c2.PiePlot()
     return
 
 if __name__ == "__main__":
