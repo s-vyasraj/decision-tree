@@ -5,6 +5,7 @@ Created on Fri Nov  1 15:52:45 2019
 @author: vyas
 """
 import numpy as np
+from Data import *
 
 class Tree:
     def __init__ (self, depth):
@@ -171,4 +172,40 @@ class Tree:
                 for j in np.arange(len(values)):
                     print(" ", in_col_obj.GetName(), "[",values[j], "] Probability = ", p[j])
         return
+
+
+    
+def GetSubTree(depth, original_tree, remove_column_index, decision_value):
+    t = Tree(depth)
+    column_obj = original_tree.GetColumn(remove_column_index)
+    index_values = column_obj.GetIndexValues(decision_value)
+    for i in np.arange(original_tree.GetTotalColumn()):
+        if (i != remove_column_index):
+            valid_column = t.GetColumn(i)
+            coltype, name, attr1, attr2, ncolumn = valid_column.GetPrunedColumn(index_values)
+            c1 = ClassColumn(coltype, name, attr1, attr1, ncolumn)
+            t.AddColumn(c1)
+    
+    if (t.GetTotalNumInputColumn <= 1):
+        return t, "leaf"
+    return t, "mid-node"
+    
+def PreOrderTraversal(t, valid_flag, depth):
+    print("PreOrderTraversal: valid_flag: ", valid_flag, "depth:", depth)
+
+    t.Print()
+    t.ComputeEntropy()
+    
+    if (valid_flag == "valid"):
+        col_num = t.GetMinEntropyNode()
+        column_obj = t.GetColumn(col_num)
+        print("...", column_obj.GetName())
+        unique_decision_count = column_obj.GetNumUniqueValueCount()
         
+        for i in np.arange(unique_decision_count):
+            filter_data = column_obj.GetUniqueData(i)
+            new_tree, tree_type = GetSubTree(depth+1, t, col_num, filter_data)
+            if (tree_type != "mid-node"):
+                PreOrderTraversal(new_tree, "valid", depth+1)
+            else:
+                t.PrintLeafProbability()       
