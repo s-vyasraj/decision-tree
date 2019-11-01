@@ -132,30 +132,6 @@ class Tree:
             return "false"
     
 
-        
-    def PrintLeafProbability(self):
-        in_valid, in_col = self.GetFirstInputColumnIndex()
-        out_valid, out_col = self.GetFirstOutColumnIndex()
-
-        out_col_obj = self.column_list[out_col]
-        in_col_obj = self.column_list[in_col]
-        u_count = out_col_obj.GetNumUniqueValueCount()
-        print(Tree.PrintLeafProbability.__name__, "u_count: ", u_count)
-
-        if (u_count == 1):
-            u_value = out_col_obj.GetUniqueData(0)
-            print(" ", in_col_obj.GetName(), "[", out_col_obj.GetName(), "= ", u_value, "] Probability = ", 1)
-        else:
-            #print("... u_count", u_count)
-            #out_col_obj.Debug()
-            for i in np.arange(u_count):
-                u_value = out_col_obj.GetUniqueData(i)
-                index_values = out_col_obj.GetIndexValues(u_value)
-                p,values = in_col_obj.GetSparseProbability(index_values)
-                for j in np.arange(len(values)):
-                    print(" ", in_col_obj.GetName(), "[",u_value, "] Probability = ", p[j])
-        return
-
     def GetOutputColumnEntropy(self):
         output_column = self.column_list[self.output_column_num]
         #print("GetOutputColumnEntropy: ",output_column.GetColumnEntropy(), " ", output_column.GetColumnData())
@@ -196,7 +172,7 @@ def GetSubTree(depth, original_tree, remove_column_index, decision_value, query)
     
     # Entropy of 0 is leaf
     if (e == 0):
-        question = "Depth: "  +  str(depth) +  column_obj.GetUserQuestion(0) + t.GetOutputColumnAnswer()
+        question = "Depth: "  +  str(depth) +  query + t.GetOutputColumnAnswer()
         PrintLevel(depth)
         print(question)
         return t, "leaf", e, question
@@ -252,8 +228,9 @@ def PreOrderTraversal(t, valid_flag, depth, query):
         #print("PreOrderTraversal: unique_decision_count on ", unique_decision_count)
 
         for i in np.arange(unique_decision_count):
+            #print("hoy..", column_obj.GetName(),  i, column_obj.GetUniqueValues() )
             filter_data = column_obj.GetUniqueData(i)
-            str_var = " Is1 " + column_obj.GetName() + " " + filter_data +  " ? "
+            str_var = " Is " + column_obj.GetName() + " " + filter_data +  " ? "
 
             new_tree, tree_type, e, q = GetSubTree(depth+1, t, col_num, filter_data, str_var)
             if (tree_type == "mid-node"):

@@ -66,9 +66,10 @@ class ClassColumn:
     # if unique_index = 0, returns first unique value
     #....
     def GetUniqueData(self, index):
-        idx = self.unique_indices[index]
-        #print("....", idx, self.data[0][0])
-        return self.data[idx]
+        return self.unique_values[index]
+    
+    def GetUniqueValues(self):
+        return self.unique_values
     
     def GetIndexValues(self, value):
         #print("..", value, "... " , self.data)
