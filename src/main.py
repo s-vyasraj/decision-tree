@@ -57,15 +57,17 @@ def ImportData(file_name):
 
                 
     
-def Dtree(t):
+def Dtree(graph,t):
     print(__name__)
-    PreOrderTraversal(t,"valid", 0,"")
+    PreOrderTraversal(graph, t,"valid", 0,"")
           
         
 def main():
     file_name = "G:/code/decision-tree/data/nephra/diagnosis.clean.data"
     tree, ndata = ImportData(file_name)
-    Dtree(tree)
+    g = TreeGraph("play", tree)
+
+    Dtree(g, tree)
 
 
 if __name__ == "__main__":

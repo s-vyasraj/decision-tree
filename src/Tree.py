@@ -6,9 +6,35 @@ Created on Fri Nov  1 15:52:45 2019
 """
 import numpy as np
 from Data import *
+from graphviz import Digraph
+
 
 debug_tree = "true"
+class TreeGraph:
+    def __init__(self, name, tree):
+        self.name = name
+        self.e = Digraph('name', filename='Tree.gv')
+        self.e.attr(size='8,5')
+        self.column_list = tree.GetColumnList()
+        return
+        
+    def AddEntry(self, depth, typeofentry, column_obj1, column_obj2, decision, result):
+        box1_name = column_obj1.GetName() + str(depth)
+        if (typeofentry == "mid-node"):
+            self.e.attr('node', shape='box')
+            box2_name = column_obj2.GetName() + str(depth)
+            self.e.node(box1_name, label = column_obj1.GetName())
+            self.e.node(box2_name, label = column_obj2.GetName())
 
+            self.e.edge(box1_name, box2_name, decision)
+        else:
+            self.e.attr('node', shape='circle')
+            self.e.edge(box1_name, result, decision)
+
+    def View(self):
+        self.e.view()
+        return        
+        
 class Tree:
     def __init__ (self, depth):
         self.column_list = []
@@ -141,7 +167,9 @@ class Tree:
         output_column = self.column_list[self.output_column_num]
         out =  output_column.GetUserQuestion(0)
         return out
-
+    
+    def GetColumnList(self):
+        return self.column_list
 
 
 def PrintLevel(level):
@@ -208,13 +236,8 @@ def GetSubTree(depth, original_tree, remove_column_index, decision_value, query)
     return t, "mid-node", e, " "
       
 
-traversal_count = 0        
-def PreOrderTraversal(t, valid_flag, depth, query):
+def PreOrderTraversal(graph, t, valid_flag, depth, query):
     #print("PreOrderTraversal: ..depth..", depth)
-    global traversal_count
-    traversal_count +=1
-    if (traversal_count == 100):
-        return
 
     #t.Print()
     t.ComputeEntropy()
@@ -236,8 +259,8 @@ def PreOrderTraversal(t, valid_flag, depth, query):
             if (tree_type == "mid-node"):
                 #print("PreOrderTraversal: Filtering on i: ", i, "f : ",filter_data)
                 #PrintLevel(depth)
-                q = query + str_var
-                PreOrderTraversal(new_tree, "valid", depth+1, q)
+                #q = query + str_var
+                PreOrderTraversal(graph, new_tree, "valid", depth+1, q)
             else:
                 #print(q)
                 #str_var = " Is " + column_obj.GetName() + " " + filter_data +  " ? "
@@ -245,6 +268,14 @@ def PreOrderTraversal(t, valid_flag, depth, query):
 
                 continue
     return            
+
+def TestGraph(t):
+    g = TreeGraph("play", t)
+    c = g.column_list
+    g.AddEntry(0, "mid-node", c[0], c[1], "testing1", "yes")
+    g.AddEntry(0,"leaf", c[0], "", "test2", "no")
+    g.View()
+
             
 def Test():
     i1= [ "rainy", "rainy", "overcast", "sunny", "sunny", "sunny", "overcast", "rainy", "rainy", "sunny", "rainy", "overcast", "overcast", "sunny", "rainy"]
@@ -269,8 +300,13 @@ def Test():
     
     t.AddColumn(co)
     t.ComputeEntropy()
-    PreOrderTraversal(t,"valid", 0,"")
-    c2.PiePlot()
+    g = TreeGraph("play", t)
+
+    PreOrderTraversal(g, t,"valid", 0,"")
+    #c2.PiePlot()
+    TestGraph(t)
+    
+    
     return
 
 if __name__ == "__main__":
